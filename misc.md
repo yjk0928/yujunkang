@@ -110,3 +110,46 @@ comEON_YOuAreSOSoS0great
 然后去解码
 ![alt text](image-14.png)
 这就是flag，提交的时候改为小写
+
+## [LitCTF 2023]这羽毛球怎么只有一半啊（恼 (初级)
+> 题目url：https://www.nssctf.cn/problem/3883
+
+打开题目下载好压缩包
+解压之后是一张图片，题意就是修改宽高，直接丢进一把梭软件里
+生成了flag830.pang
+里面包含flag
+![alt text](image-15.png)
+
+## [NISACTF 2022]huaji？
+> 题目url:https://www.nssctf.cn/problem/2049
+
+下载好插件放在kali里面可以看到是一张图片
+直接binwalk看一下能不能分离出来一些东西
+![alt text](image-16.png)
+分离出来一个压缩包，拖出来解压一下
+![alt text](image-17.png)
+解压的时候需要密码
+看别人的wp说，在kali的时候（或者在010里）看到图片是JPEG，可以把文件名修改为JPEG然后再属性里看到神秘数字
+![alt text](image-18.png)
+这是16进制字符
+![alt text](image-19.png)
+得到的就是密码，输入密码到压缩包里，得到flag
+![alt text](image-20.png)
+
+
+## [LitCTF 2023]404notfound (初级)
+>题目url：https://www.nssctf.cn/problem/3881
+
+拖到010里就可以直接找到flag
+![alt text](image-21.png)
+
+## [SWPUCTF 2021 新生赛]gif好像有点大
+>题目url：https://www.nssctf.cn/problem/401
+
+下载好压缩包解压，果然用来很大内存
+丢进010里面没有找到什么
+用stegslove逐帧分析一下gif图片
+![alt text](image-22.png)
+找到一张有二维码的图片，把这张图片丢经QR
+![alt text](image-23.png)
+直接得到falg
