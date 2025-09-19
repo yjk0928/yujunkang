@@ -39,10 +39,11 @@ main函数里面
 XOR(&Str1, 3);
 `
 这一句就是异或运算，将flag的asci码与3进行异或运算
+```c
 #include <stdio.h>
 #include <string.h>
 
-```c
+
 int main()
 {
     int a2 = 3;
@@ -61,5 +62,35 @@ int main()
     return 0;
 }
 
+```
+逆行攻击代码
+```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+int main() {
+    // 已知的Str2内容
+    char Str2[] = "E`}J]OrQF[V8zV:hzpV}fVF[t";
+    int len = strlen(Str2);
+
+    // 动态分配内存
+    char* flag = (char*)malloc(len + 1);
+    if (flag == NULL) {
+        printf("内存分配失败\n");
+        return 1;
+    }
+
+    // 使用正确的密钥9进行异或运算
+    for (int i = 0; i < len; i++) {
+        flag[i] = Str2[i] ^ 9;  // 这里将3改为9
+    }
+    flag[len] = '\0';
+
+    printf("正确的FLAG是: %s\n", flag);
+
+    free(flag);
+    return 0;
+}
 ```
 得到falg
