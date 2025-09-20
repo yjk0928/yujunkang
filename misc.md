@@ -154,5 +154,26 @@ comEON_YOuAreSOSoS0great
 ![alt text](image-23.png)
 直接得到falg
 
+## [NISACTF 2022]为什么我什么都看不见
+>url:https://www.nssctf.cn/problem/1991
 
+这里要先补充一下常见的文件头或者文件尾
+![alt text](image-50.png)
+把下载好的插件放进010里面看一下
+![alt text](image-51.png)
+看到文件头只有4E 47，基本就是png图片修改了文件头
+![alt text](image-52.png)
+修改好文件头然后把文件后缀改为png，就可以看到图片
+![alt text](image-53.png)
+把图片放进010里面没有发现有压缩包
+修改图片宽高也没有用
+那就放进stegslove看一下
+逐帧分析也没有用，然后分析lsb
+介绍一下LSB隐写
+```
+LSB隐写的图片，我们用StegSolve打开模块，由于是RGB三原色的最低位隐写
+所以在stegslove里面将三原色全选为0
+```
 
+![alt text](image-54.png)
+找到falg
