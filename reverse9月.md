@@ -94,3 +94,37 @@ int main() {
 }
 ```
 得到falg
+
+## [SWPUCTF 2022 新生赛]babyre
+>题目url：https://www.nssctf.cn/problem/2650
+
+下再好插件，解压查壳
+![alt text](image-42.png)
+无壳，64位拖进ida
+![alt text](image-43.png)
+直接找到flag
+
+## [UTCTF 2020]Basics(RE)
+> url:https://www.nssctf.cn/problem/214
+
+![alt text](image-44.png)
+64位，拖进ida
+f12直接就可以看到flag
+![alt text](image-45.png)
+
+## [SWPUCTF 2022 新生赛]upx
+>题目url：[SWPUCTF 2022 新生赛]upx
+
+查壳
+![alt text](image-46.png)
+upx壳，64位
+拖进linux脱壳
+![alt text](image-47.png)
+然后拖出来放进ida
+![alt text](image-48.png)
+找到主函数
+```
+将LQQAVDyWRZ]3q]zmpf]uc{]vm]glap{rv]dnce与2经行异或操作
+```
+![alt text](image-49.png)
+得到flag
