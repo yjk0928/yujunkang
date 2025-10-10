@@ -81,3 +81,31 @@ F7单步调试，进入CreateMap函数
 path：wwdddwwwaaawwwwwwwwwddddssssdddssdsssssssdddwwwwddsssd
 md5加密
 ![alt text](image-94.png)
+
+## 技巧三：匹配绕过
+当发现有if判断比对时，可通过动调加载获取匹配值
+### [HNCTF 2022 Week1]CrackMe
+>url:https://www.nssctf.cn/problem/2908
+
+题目的提示是：得到CreakMe的注册码，动态下断点
+![alt text](image-96.png)
+32位，无壳
+
+在 ExitProcess(0); 处下断点的核心目的是捕获程序 “正常结束” 的关键节点，便于分析程序退出前的状态，尤其是在逆向工程或调试验证逻辑时非常有用。具体原因包括：
+
+    确认程序是否进入 “成功路径”
+
+从代码逻辑看，ExitProcess(0); 仅在 “序列号验证成功” 后被调用（if (lstrcmpA(String1, String2) == 0) 时）。在这里下断点，可直观判断程序是否通过了验证（若断点触发，说明验证成功）。
+获取关键数据（如正确的序列号）
+程序在退出前，内存中可能还保留着关键数据（例如代码中生成的正确序列号 String2）。在 ExitProcess 处中断后，可通过调试器查看内存或寄存器，直接获取这些数据（比如逆向时想得到 “正确的序列号”，这是常用技巧）。
+分析退出前的资源状态
+若程序在退出前有未完成的操作（如写入文件、释放资源等），断点可暂停进程，检查此时的资源状态（如句柄、内存分配情况），排查潜在的异常或逻辑问题。
+
+![alt text](image-97.png)
+
+![alt text](image-98.png)
+输入之后，回到伪代码，双击string2，按r变为字符，提取出来就是flag
+![alt text](image-99.png)
+注意将大写字母改为小写
+
+## 技巧四：修改判断函数跳转值
