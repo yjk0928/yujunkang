@@ -177,3 +177,22 @@ LSB隐写的图片，我们用StegSolve打开模块，由于是RGB三原色的�
 
 ![alt text](image-54.png)
 找到falg
+
+## [SWPU 2020]套娃
+>url:https://www.nssctf.cn/problem/47
+
+![alt text](image-131.png)
+下载好文件之后发现打不开，放进010看看
+![alt text](image-132.png)
+注意文件头是zip文件的文件头，所以这里要将文件改为zip文件
+![alt text](image-133.png)
+解压后有一个RC4内容的文本，还有一个打不开的文件
+同样还是zip文件头，改为zip后，解压得到RC4key.zip和一个打不开的东西
+但是这个压缩包有密码，看了一下不是伪加密
+猜测这个打不开的东西里有密码
+![alt text](image-134.png)
+找到密码，解压成功
+将得到的key和data进行解密
+![alt text](image-135.png)
+得到flag
+
