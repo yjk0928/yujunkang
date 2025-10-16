@@ -208,3 +208,113 @@ int __cdecl main(int argc, const char **argv, const char **envp)
 然后用base64换表脚本运行一下
 ![alt text](image-125.png)
 得到falg
+
+## [NISACTF 2022]string
+>https://www.nssctf.cn/problem/2042
+> 知识点：动态调试
+![alt text](image-136.png)
+
+```c
+char *__fastcall flag(char *a1)
+{
+  char *v1; // rax
+  char *v2; // rax
+  char *v3; // rax
+  int v4; // eax
+  char *v6; // [rsp+8h] [rbp-38h]
+  int i; // [rsp+1Ch] [rbp-24h]
+  int j; // [rsp+20h] [rbp-20h]
+  int k; // [rsp+20h] [rbp-20h]
+  int v10; // [rsp+24h] [rbp-1Ch]
+  int m; // [rsp+28h] [rbp-18h]
+  int v12; // [rsp+2Ch] [rbp-14h]
+  int v13; // [rsp+34h] [rbp-Ch]
+
+  v6 = a1;
+  v12 = (_DWORD)a1 + 1;
+  if ( (_DWORD)a1 << 30 )
+  {
+    while ( 1 )
+    {
+      v1 = v6++;
+      if ( !*v1 )
+        break;
+      if ( !((_DWORD)v6 << 30) )
+        goto LABEL_4;
+    }
+  }
+  else
+  {
+LABEL_4:
+    for ( i = (int)v6; ((i - 16843009) & ~i & 0x80808080) == 0; i = v13 )
+    {
+      v13 = v6[1];
+      v6 += 4;
+    }
+    v2 = v6++;
+    for ( j = *v2; j; j = *v3 )
+      v3 = v6++;
+  }
+  puts("This a magic!");
+  v10 = (_DWORD)v6 - v12;
+  for ( k = 0; (int)v6 - v12 > k; ++k )
+    v10 ^= 0x1Au;
+  if ( v10 != 13 )
+  {
+    puts("error!");
+    exit(0);
+  }
+  puts("The length of flag is 13");
+  srand(seed);
+  printf("NSSCTF{");
+  for ( m = 0; m < 13; ++m )
+  {
+    v4 = rand();
+    printf("%d", (unsigned int)(v4 % 8 + 1));
+  }
+  putchar(125);
+  return &v6[-v12];
+}
+```
+这段代码中v4是flag里面的内容
+可这里需要先知道flag的内容是不会变的
+所以为了使内容不变，seed应该不变，所以要先找到seed
+![alt text](image-137.png)
+将seed改为10进制数
+![alt text](image-138.png)
+然后可以写代码了
+```c
+#include<stdio.h>
+#include<stdlib.h>
+int main() {
+	printf("NSSCTF{");
+	srand(10084);
+	
+	for (int i = 0; i < 13; i++) {
+		int v4 = rand();
+		printf("%d", (v4%8+1));
+
+	}
+	printf("}");
+	return 0;
+}
+```
+![alt text](image-140.png)
+但是提交失败，看wp说要在linux下运行
+得到flag
+NSSCTF{5353316611126}
+
+## [CISCN 2022 东北]easycpp
+>url: https://www.nssctf.cn/problem/2402
+>知识点：动态调试
+无壳，64位
+ ![alt text](image-141.png)
+
+
+
+
+
+
+
+
+
