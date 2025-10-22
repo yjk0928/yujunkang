@@ -434,3 +434,15 @@ http://node5.anna.nssctf.cn:20716//?code=printf(`c\at /fffffffffflagafag`);
 ```
 
 ![alt text](image-164.png)
+
+## [HNCTF 2022 Week1]2048
+>url:https://www.nssctf.cn/problem/2898
+>知识点：js
+
+![alt text](image-171.png)
+打开是一个游戏界面
+![alt text](image-172.png)
+在js里找到了游戏结束时会输出一段字符串
+方法1：下断点，并在控制台里给this.score赋值20000；
+方法2：直接放进随波逐流里面
+![alt text](image-173.png)

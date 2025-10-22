@@ -420,3 +420,102 @@ int main() {
 ![alt text](image-160.png)
 
 
+## [SWPUCTF 2022 新生赛]xor
+>url:https://www.nssctf.cn/problem/2652
+
+![alt text](image-165.png)
+64位，无壳
+在ida找到伪代码
+```c
+int __cdecl main(int argc, const char **argv, const char **envp)
+{
+  _BYTE v4[38]; // [rsp+20h] [rbp-60h] BYREF
+  char v5; // [rsp+46h] [rbp-3Ah]
+  char v6[44]; // [rsp+50h] [rbp-30h] BYREF
+  int i; // [rsp+7Ch] [rbp-4h]
+
+  _main(argc, argv, envp);
+  printf_0("----------Welcome to NSSCTF Reverse----------");
+  printf_0("\n");
+  printf_0("This is the thrid program of the reverse challenge");
+  printf_0("\n");
+  printf_0("oh, you can't see the flag, but you can see the flag");
+  printf_0("\n");
+  printf_0("This time, the flag is encrypted by xor");
+  printf_0("\n");
+  printf_0("And you need to input flag");
+  printf_0("\n");
+  printf_0("the flag will be encrypted by xor and compare with the encrypted flag");
+  printf_0("\n");
+  printf_0("so how to get the flag?");
+  printf_0("\n");
+  printf_0("maybe you need to know ascii and xor");
+  printf_0("\n");
+  printf_0("Good Luck");
+  printf_0("\n");
+  printf_0("---------------------------------------------");
+  printf_0("\ninput the flag:");
+  scanf_s("%s", v6);
+  printf_0("\n");
+  qmemcpy(v4, "LQQAVDyZMP]3q]emmf]uc{]vm]glap{rv]dnce", sizeof(v4));
+  v5 = 127;
+  for ( i = 0; i <= 38; ++i )
+  {
+    if ( ((unsigned __int8)v6[i] ^ 2) != v4[i] )
+    {
+      printf_0("\nwrong flag");
+      return 0;
+    }
+  }
+  printf_0("\nflag is right");
+  return 0;
+}
+```
+这里只需要将v4与2进行异或运算一下就好了
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    /* 与你给出的反编译代码中 qmemcpy 得到的密文一致 */
+    const unsigned char encrypted[] = "LQQAVDyZMP]3q]emmf]uc{]vm]glap{rv]dnce";
+    size_t n = strlen((const char*)encrypted);
+
+    /* 输出缓冲，记得 +1 放置终止符 */
+    char flag[256];
+    if (n + 1 > sizeof(flag)) {
+        fprintf(stderr, "input too long\n");
+        return 1;
+    }
+
+    for (size_t i = 0; i < n; ++i) {
+        /* 还原：原字符 = encrypted[i] ^ 2 */
+        flag[i] = (char)(encrypted[i] ^ 2u);
+    }
+    flag[n] = '\0';
+
+    printf("Recovered flag: %s\n", flag);
+    return 0;
+}
+
+```
+![alt text](image-166.png)
+
+## [MoeCTF 2022]chicken_soup
+>url:https://www.nssctf.cn/problem/3323
+>知识点：花指令
+
+![alt text](image-167.png)
+32位，无壳
+
+![alt text](image-168.png)
+找到标红的地方，根据jz和jnz，不管是不是0都跳到loc_40100D+1，只需要将这个花指令去除就可以正常f5
+
+按D将这个地方变为数据
+![alt text](image-169.png)
+这个东西无作用，也就是我们要去除的地方
+![alt text](image-170.png)
+
+## [MoeCTF 2022]chicken_soup
+>url:https://www.nssctf.cn/problem/3323
