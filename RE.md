@@ -519,3 +519,292 @@ int main(void)
 
 ## [MoeCTF 2022]chicken_soup
 >url:https://www.nssctf.cn/problem/3323
+
+## [GDOUCTF 2023]Tea
+>url:https://www.nssctf.cn/problem/3688
+>知识点：动态调试
+
+![alt text](image-174.png)
+无壳，64位
+![alt text](image-175.png)
+找到一个假的flag
+```c
+int __fastcall main_0(int argc, const char **argv, const char **envp)
+{
+  char *v3; // rdi
+  __int64 i; // rcx
+  char v6; // [rsp+20h] [rbp+0h] BYREF
+  int v7; // [rsp+24h] [rbp+4h]
+  int v8; // [rsp+44h] [rbp+24h]
+  int v9[12]; // [rsp+68h] [rbp+48h] BYREF
+  _DWORD v10[16]; // [rsp+98h] [rbp+78h] BYREF
+  int v11[31]; // [rsp+D8h] [rbp+B8h] BYREF
+  int j; // [rsp+154h] [rbp+134h]
+  int k; // [rsp+174h] [rbp+154h]
+  int m; // [rsp+194h] [rbp+174h]
+
+  v3 = &v6;
+  for ( i = 102i64; i; --i )
+  {
+    *(_DWORD *)v3 = -858993460;
+    v3 += 4;
+  }
+  j___CheckForDebuggerJustMyCode(&unk_140023009, argv, envp);
+  v7 = 32;
+  v8 = 0;
+  v9[0] = 1234;
+  v9[1] = 5678;
+  v9[2] = 9012;
+  v9[3] = 3456;
+  memset(v10, 0, 0x28ui64);
+  v11[15] = 0;
+  v11[23] = 0;
+  sub_1400113E8();
+  for ( j = 0; j < 10; ++j )
+    sub_1400111FE("%x", &v10[j]);
+  sub_140011339(v9);
+  sub_140011145(v10, v11);
+  sub_1400112B7(v10, v9);
+  v8 = sub_140011352(v10);
+  if ( v8 )
+  {
+    sub_140011195("you are right\n");
+    for ( k = 0; k < 10; ++k )
+    {
+      for ( m = 3; m >= 0; --m )
+        sub_140011195("%c", (unsigned __int8)((unsigned int)v11[k] >> (8 * m)));
+    }
+  }
+  else
+  {
+    sub_140011195("fault!\nYou can go online and learn the tea algorithm!");
+  }
+  return 0;
+}
+```
+分析一下里面的每个函数
+1. 首先是sub_1400113E8();
+```c
+__int64 __fastcall sub_140011B00(__int64 a1, __int64 a2, __int64 a3)
+{
+  j___CheckForDebuggerJustMyCode(&unk_140023009, a2, a3);
+  sub_140011195("This is the input format for you geting of flag hex \n");
+  sub_140011195("0x12345678 0x12345678 0x12345678 0x12345678 0x12345678 0x12345678 0x12345678\n");
+  sub_140011195("The end of flag:\nHZCTF{This_is_the_fake_flag}\n");
+  return sub_140011195("input your get the flag:\n");
+```
+这个函数就是打印了一段东西
+
+3. sub_1400111FE("%x", &v10[j]);根据这句化就可以知道这是输入函数
+4. sub_140011195("you are right\n");输出函数
+
+5. sub_140011339(v9);
+```c
+__int64 __fastcall sub_1400117D0(_DWORD *a1, __int64 a2, __int64 a3)
+{
+  char *v3; // rdi
+  __int64 i; // rcx
+  __int64 result; // rax
+  char v6; // [rsp+20h] [rbp+0h] BYREF
+  int v7; // [rsp+2Ch] [rbp+Ch]
+  int v8; // [rsp+30h] [rbp+10h]
+  unsigned int v9; // [rsp+34h] [rbp+14h]
+
+  v3 = &v6;
+  for ( i = 14i64; i; --i )
+  {
+    *(_DWORD *)v3 = 3435973836;
+    v3 += 4;
+  }
+  j___CheckForDebuggerJustMyCode(&unk_140023009, a2, a3);
+  v7 = 4455;
+  v8 = 6677;
+  v9 = 8899;
+  *a1 = 2233;
+  a1[1] = v7;
+  a1[2] = v8;
+  result = v9;
+  a1[3] = v9;
+  return result;
+}
+```
+
+传入的参数为v9，但是在函数内部通过指针被改变了值
+原来的v9值为1234,5678,9012,3456
+改变后的v9值为2233,4455,6677,8899
+
+6. sub_140011145(v10, v11);
+```c
+__int64 __fastcall sub_140012030(__int64 a1, __int64 a2, __int64 a3)
+{
+  __int64 result; // rax
+  int i; // [rsp+24h] [rbp+4h]
+
+  result = j___CheckForDebuggerJustMyCode(&unk_140023009, a2, a3);
+  for ( i = 0; i < 10; ++i )
+  {
+    *(_DWORD *)(a2 + 4i64 * i) = *(_DWORD *)(a1 + 4i64 * i);
+    result = (unsigned int)(i + 1);
+  }
+  return result;
+}
+```
+
+    核心功能：将 a1 指向的数组中前 10 个 4 字节元素（_DWORD 类型）复制到 a2 指向的数组中。
+        a1 + 4i64 * i：计算源数组第 i 个元素的地址（每个元素 4 字节，所以偏移量为 4*i）。
+        a2 + 4i64 * i：计算目标数组第 i 个元素的地址。
+        赋值操作：将源数组第 i 个元素的值复制到目标数组第 i 个元素。
+    循环计数：i 从 0 到 9（共 10 次循环），每次循环后 result 被更新为 i+1（即复制的元素个数），循环结束后 result 的值为 10。
+7.  sub_1400112B7(v10, v9);
+```c
+__int64 __fastcall sub_140011900(__int64 a1, __int64 a2, __int64 a3)
+{
+  __int64 result; // rax
+  int v4; // [rsp+44h] [rbp+24h]
+  int i; // [rsp+64h] [rbp+44h]
+  unsigned int v6; // [rsp+84h] [rbp+64h]
+  unsigned int v7; // [rsp+C4h] [rbp+A4h]
+
+  result = j___CheckForDebuggerJustMyCode((__int64)&unk_140023009, a2, a3);
+  for ( i = 0; i <= 8; ++i )
+  {
+    v6 = 0;
+    v7 = 256256256 * i;
+    v4 = i + 1;
+    do
+    {
+      ++v6;
+      *(_DWORD *)(a1 + 4i64 * i) += v7 ^ (*(_DWORD *)(a1 + 4i64 * v4)
+                                        + ((*(_DWORD *)(a1 + 4i64 * v4) >> 5) ^ (16 * *(_DWORD *)(a1 + 4i64 * v4)))) ^ (v7 + *(_DWORD *)(a2 + 4i64 * (v7 & 3)));
+      *(_DWORD *)(a1 + 4i64 * v4) += (v7 + *(_DWORD *)(a2 + 4i64 * ((v7 >> 11) & 3))) ^ (*(_DWORD *)(a1 + 4i64 * i)
+                                                                                       + ((*(_DWORD *)(a1 + 4i64 * i) >> 5) ^ (16 * *(_DWORD *)(a1 + 4i64 * i))));
+      v7 += 256256256;
+    }
+    while ( v6 <= 0x20 );
+    result = (unsigned int)(i + 1);
+  }
+  return result;
+}
+```
+实际上这里的XTEA算法，就是对密文一共10组，每二组进行一次加密。加密轮次为33轮，常数为0xF462900.
+8.   v8 = sub_140011352(v10);
+```c
+_BOOL8 __fastcall sub_140011B60(__int64 a1, __int64 a2, __int64 a3)
+{
+  char *v3; // rdi
+  __int64 i; // rcx
+  char v6; // [rsp+20h] [rbp+0h] BYREF
+  BOOL v7; // [rsp+24h] [rbp+4h]
+  int v8[15]; // [rsp+48h] [rbp+28h]
+  int j; // [rsp+84h] [rbp+64h]
+
+  v3 = &v6;
+  for ( i = 34i64; i; --i )
+  {
+    *(_DWORD *)v3 = -858993460;
+    v3 += 4;
+  }
+  j___CheckForDebuggerJustMyCode(&unk_140023009, a2, a3);
+  v7 = 0;
+  v8[0] = 444599258;
+  v8[1] = -140107365;
+  v8[2] = 1226314200;
+  v8[3] = -234802392;
+  v8[4] = 359413339;
+  v8[5] = 1013885656;
+  v8[6] = -2066432216;
+  v8[7] = -249921817;
+  v8[8] = 856928850;
+  v8[9] = -576724359;
+  for ( j = 0; j < 10; ++j )
+    v7 = *(_DWORD *)(a1 + 4i64 * j) == v8[j];
+  return v7;
+}
+```
+
+循环10次，v8[j] == a1[j]
+```
+密文如下:
+
+v8[0] = 0x1A800BDA;
+v8[1] = 0xF7A6219B;
+v8[2] = 0x491811D8;
+v8[3] = 0xF2013328;
+v8[4] = 0x156C365B;
+v8[5] = 0x3C6EAAD8;
+v8[6] = 0x84D4BF28;
+v8[7] = 0xF11A7EE7;
+v8[8] = 0x3313B252;
+v8[9] = 0xDD9FE279;
+```
+然后可以写脚本
+```c
+#include <stdio.h>
+#include <stdint.h>
+#define delta 0xF462900
+
+int main()
+{
+    uint32_t key[4] = {2233,4455,6677,8899};
+    uint32_t Data[10] = { 0x1A800BDA ,0xF7A6219B ,0x491811D8,0xF2013328,0x156C365B, 0x3C6EAAD8,0x84D4BF28,0xF11A7EE7,0x3313B252,0xDD9FE279 };
+    unsigned int j;
+    int i;
+    unsigned int sum;
+    for (i = 8; i >= 0; i--)
+    {
+        j = 33;
+        sum = delta * (i + j);
+        while(j--)
+        { 
+            sum -= delta;
+            Data[i + 1] -= (sum + key[(sum >> 11) & 3]) ^ ((Data[i] + ((Data[i] >> 5) ^ (Data[i] << 4))));
+            Data[i] -= sum ^ (Data[i + 1] + ((Data[i + 1] >> 5) ^ (Data[i + 1] << 4))) ^ (sum + key[sum & 3]);
+        }
+
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        printf("%x", Data[i]);
+    }
+
+
+
+
+    return 0;
+}
+```
+![alt text](image-178.png)
+解16进制得到flag
+
+## [NSSRound#3 Team]jump_by_jump_revenge
+>url:https://www.nssctf.cn/problem/2316
+>知识点：花指令
+
+![alt text](image-179.png)
+无壳，32位
+![alt text](image-180.png)
+找到标红的地方
+按D回复数据
+![alt text](image-181.png)
+Ctrl+N nop掉
+![alt text](image-182.png)
+按c变回汇编
+![alt text](image-184.png)
+把所有红色text部分快捷键p变为函数，然后f5进入伪代码
+```c
+cint __cdecl main_0(int argc, const char **argv, const char **envp)
+{
+  int i; // [esp+D0h] [ebp-40h]
+  char Str1[36]; // [esp+E8h] [ebp-28h] BYREF
+
+  sub_411037("%s", (char)Str1);
+  for ( i = 0; i < 29; ++i )
+    Str1[i] = (Str1[i] + Str1[(i * i + 123) % 21]) % 96 + 32;
+  if ( !j_strcmp(Str1, "~4G~M:=WV7iX,zlViGmu4?hJ0H-Q*") )
+    puts("right!");
+  else
+    puts("nope!");
+  return 0;
+```
+然后写脚本得到flag
