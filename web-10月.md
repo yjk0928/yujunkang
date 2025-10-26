@@ -447,3 +447,35 @@ http://node5.anna.nssctf.cn:20716//?code=printf(`c\at /fffffffffflagafag`);
 方法2：直接放进随波逐流里面
 ![alt text](image-173.png)
 
+## [HNCTF 2022 Week1]easy_html
+>url:https://www.nssctf.cn/problem/2899
+>知识点：http协议
+
+打开题目没有东西，抓包看一下
+![alt text](image-185.png)
+然后访问f14g.php
+![alt text](image-186.png)
+输入手机号的时候发现只能输入10位
+直接在bp的重发器里里将10位的手机号码修改为正确的手机号码
+![alt text](image-187.png)
+得到flag
+
+## [羊城杯 2020]easycon
+>url：https://www.nssctf.cn/problem/1421
+>知识点：目录扫描
+
+打开题目是一个ubuntu的介绍界面
+![alt text](image-188.png)
+用随波逐流扫描
+![alt text](image-189.png)
+发现index.php
+![alt text](image-191.png)
+![alt text](image-190.png)
+直接用蚁剑链接，链接密码是cmd
+![alt text](image-192.png)
+点进一个.txt文件
+![alt text](image-193.png)
+看别人的wp说这要base64转图片
+放在随波逐流里进行转换
+![alt text](image-194.png)
+得到flag
