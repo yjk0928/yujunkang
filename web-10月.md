@@ -479,3 +479,21 @@ http://node5.anna.nssctf.cn:20716//?code=printf(`c\at /fffffffffflagafag`);
 放在随波逐流里进行转换
 ![alt text](image-194.png)
 得到flag
+## [SWPUCTF 2022 新生赛]奇妙的MD5
+>url:https://www.nssctf.cn/problem/2638
+>知识点：弱比较，md5
+
+![alt text](image-197.png)
+抓包看到关键的地方
+
+这里字符串 ffifdyop经行md5加密后可以变为万能密码
+输入进去然后打开源码
+![alt text](image-198.png)
+这里进行简单的md5绕过就可以
+构造payload
+```
+http://node5.anna.nssctf.cn:27948/c0nt1nue.php?x=QLTHNDT&y=QNKCDZO
+```
+![alt text](image-199.png)
+然后用数组绕过就可以得到flag，这里是===强比较所以要找到md5也相同的字符串要用工具，这里九直接使用数组绕过
+![alt text](image-200.png)

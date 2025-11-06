@@ -808,3 +808,53 @@ cint __cdecl main_0(int argc, const char **argv, const char **envp)
   return 0;
 ```
 然后写脚本得到flag
+
+## [AFCTF 2018]欢迎光临
+>url: https://www.nssctf.cn/problem/1110
+
+![alt text](image-195.png)
+32位
+在ida打开可以直接看到flag
+
+## [羊城杯 2020]easyre
+>url:https://www.nssctf.cn/problem/1416
+
+![alt text](image-196.png)
+64位
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+  int v3; // eax
+  int v4; // eax
+  int v5; // eax
+  char Str[48]; // [rsp+20h] [rbp-60h] BYREF
+  char Str1[64]; // [rsp+50h] [rbp-30h] BYREF
+  char v9[64]; // [rsp+90h] [rbp+10h] BYREF
+  char v10[64]; // [rsp+D0h] [rbp+50h] BYREF
+  char Str2[60]; // [rsp+110h] [rbp+90h] BYREF
+  int v12; // [rsp+14Ch] [rbp+CCh] BYREF
+
+  _main(argc, argv, envp);
+  strcpy(Str2, "EmBmP5Pmn7QcPU4gLYKv5QcMmB3PWHcP5YkPq3=cT6QckkPckoRG");
+  puts("Hello, please input your flag and I will tell you whether it is right or not.");
+  scanf("%38s", Str);
+  if ( strlen(Str) != 38
+    || (v3 = strlen(Str), (unsigned int)encode_one(Str, v3, v10, &v12))
+    || (v4 = strlen(v10), (unsigned int)encode_two(v10, v4, v9, &v12))
+    || (v5 = strlen(v9), (unsigned int)encode_three(v9, v5, Str1, &v12))
+    || strcmp(Str1, Str2) )
+  {
+    printf("Something wrong. Keep going.");
+    return 0;
+  }
+  else
+  {
+    puts("you are right!");
+    return 0;
+  }
+}
+```
+进ida找到关键函数
+
+把所有代码丢给ai可以得到flag
