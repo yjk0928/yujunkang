@@ -27,6 +27,7 @@ if(isset($_GET['url']))
 用system没用，那么就试一下tee
  因为没有回显，所以需要把查看出来的内容读取并且写入一个地方来查看，tee命令就是从标准输入读取，再写入标准输出和文件。简单说就是把查看的内容读取然后写入到后面的1.txt文件
 构造payload
+
 ```
 http://node7.anna.nssctf.cn:25613/?url=l\s /|tee 1.txt;
 ```
