@@ -1036,4 +1036,5 @@ echo urlencode(serialize($t));
 
 然后get传参，得到flag
 ![alt text](image-231.png)
-1
+
+
