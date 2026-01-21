@@ -1,4 +1,4 @@
-# sql注入
+# 01_sql注入
 ##  msql语句 
 
 1：将user中的id，name等写入内容
