@@ -21,3 +21,13 @@
 没有东西，然后再看一下robots.txt
 ![alt text](image-235.png)
 访问一下这个目录
+
+
+## [HNCTF 2022 WEEK2]ez_SSTI
+>url:https://www.nssctf.cn/problem/2953
+> 服务器端模板注入
+
+![alt text](image-236.png)
+打开题目,结合题目得到是ssti，服务器端模板注入
+
+
