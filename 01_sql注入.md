@@ -676,3 +676,8 @@ nss=-123'/**/ununionion/**/select/**/1,2,group_concat(id,Secr3t,flll444g)/**/fro
 ```
 ![alt text](image-332.png)
 
+
+### [强网杯 2019]随便注
+>url:    https://www.nssctf.cn/problem/2882
+>知识点： 堆叠注入
+
